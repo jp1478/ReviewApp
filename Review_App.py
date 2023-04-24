@@ -1,17 +1,14 @@
 #@author Joshua Phillips - jp1478
 import os
-from tkinter import filedialog
 import tkinter as tk
-# from tkinter import ttk
-from tkinter import Tk, Button, Label, Scrollbar, Canvas
+from tkinter import Tk, Button, Label, Scrollbar, Canvas, font, filedialog
 from PIL import Image, ImageTk
-from tkinter import font
+
 def open_review():
     global review
     # review = Tk()
     review.title("Review Page")
     review.state('zoomed')
-
     myFont = font.Font(size=10, weight="bold")
 
     # Buttons
@@ -32,22 +29,12 @@ def open_review():
 
     ### Raw Canvas
     global image_canvas
-    image_canvas = Canvas(review, bd="3", bg="lightgrey")
+    image_canvas = Canvas(review, bd="3", bg="#d9d9df")
     image_canvas.place(relx=.02, rely=.2, relheight = 520/700, relwidth=1140/1200, anchor=tk.NW)
-    # image_canvas.config(scrollregion=[0, 0, 570, 1000])
 
     # image Canvas Scrolling Function
     image_canvas.yview_moveto(0)
     image_canvas.xview_moveto(0)
-
-    # Load and display the image images
-    # if bool(raw_images):
-    #     display_images()
-    # else:
-    #     image_canvas.create_text(730, 250,
-    #                              text = "Select a folder to review \n \n Folder must have 'raws' and 'finals' sub-folders",
-    #                              font = ("Arial", 20),
-    #                              justify="center")
 
     display_images()
 
@@ -76,20 +63,11 @@ def display_images():
     for image_group in raw_images:
         if len(image_group) > group_len:
             group_len = len(image_group)
-
     first_image_position = int( center - ((group_len + 2) * width + (group_len+1) * width_pad) / 2 )
-
     image_x_pos = list()
-
     for i in range(group_len):
         image_x_pos.append(first_image_position + (width + width_pad) * (i+1))
-
     image_x_pos.append(first_image_position + (width + width_pad) * (group_len+1) + width_pad)
-
-    line_x = image_x_pos[len(image_x_pos) - 2] + width/2 + width_pad
-    image_canvas.create_line(line_x, 0, line_x, image_canvas.winfo_height())
-
-    print("message: ", message)
 
     if bool(raw_images):
         for i in range(len(raw_images)):
@@ -105,26 +83,24 @@ def display_images():
                 x_pos = image_x_pos[group_len - len(group_images) + j]
                 y_pos = i * (height + height_pad * 2) + int(height / 2) + height_pad
                 image_canvas.create_window(x_pos, y_pos, window=label)
+
+        line_x = image_x_pos[len(image_x_pos) - 2] + width / 2 + width_pad
+        image_canvas.create_line(line_x, 0, line_x, max(len(final_images), len(raw_images)) * (height + height_pad + height_pad) + 16)
     else:
-        # if not bool(message):
-        message = "Select a raw image folder"
+        if message != "Images must be grouped":
+            message = "Select a raw image folder"
 
-        # image_canvas.create_text(300, 200, text = raw_message, font = ("Arial", 15), anchor = tk.NE)
-        display_message()
-
-    if bool(final_images):# and not bool(final_message):
+    if bool(final_images):
         for i in range(len(final_images)):
             final_label = Label(image_canvas, image = final_images[i])
             image_canvas.create_window(image_x_pos[len(image_x_pos)-1],
                                        i * (height + height_pad * 2) + int(height / 2) + height_pad,
                                        window = final_label)
     else:
-        # if not bool(message):
-        message = "Select a final image folder"
+        if message not in ("Select a raw image folder", "Images must be grouped"):
+            message = "Select a final image folder"
 
-        # image_canvas.create_text(1100, 200, text = final_message, font = ("Arial", 15), anchor = tk.NW)
-        display_message()
-
+    display_message()
 
     # print(str(displayed) + " group(s) displayed")
 
@@ -142,7 +118,6 @@ def display_images():
 
 def select_folder(is_raws_param):
     global message
-    # global final_message
     folder_path = filedialog.askdirectory()
 
     #check if folder was selected
@@ -159,10 +134,8 @@ def select_folder(is_raws_param):
 
     if is_raws_param:
         message = fill_raws(image_names, folder_path)
-        # print("select_folder", raw_message)
     else:
         message = fill_finals(image_names, folder_path)
-        # print("select_folder", final_message)
 
     display_images()
 
@@ -173,17 +146,17 @@ def is_raws(image_names):
             group_num = int(group_num)
         except ValueError:
             return False
-
     return True
+
 def fill_raws(raw_names, folder_path):
     global raw_images
+    raw_images = list()
 
     if not is_raws(raw_names):
         return "Images must be grouped"
 
     for file_name in raw_names:
         group_num = file_name[0:file_name.find('-')]
-
         group_num = int(group_num)
 
         if len(raw_images) < group_num:
@@ -195,36 +168,35 @@ def fill_raws(raw_names, folder_path):
         image = ImageTk.PhotoImage(image)
         raw_images[group_num - 1].append(image)
 
-    return ""
+    return "                                    "
 
 def fill_finals(final_names, folder_path):
     global final_images
+    final_images = list()
+
     for file_name in final_names:
         image = Image.open(os.path.join(folder_path, file_name))
         image = image.resize((width, height), Image.LANCZOS)
         image = ImageTk.PhotoImage(image)
         final_images.append(image)
 
-    return ""
+    return "                                    "
 
 def display_message():
     global message, review
-    message_label = Label(review, text=message, font=("Ariel", 12))
-    message_label.place(relx=.5, rely=.03, anchor=tk.N)
+    message_label = Label(review, text=message, font=("Ariel", 12), padx=20, pady=10, background="#d9d9df")
+    message_label.place(relx=.5, rely=.05, anchor=tk.N)
 
-# raw_folder_path = ''
-# final_folder_path = ''
-
-height = 170
-width = 264
+#global variables
+image_size_mult = 1.5
+height = int(170 * image_size_mult)
+width = int(264 * image_size_mult)
 height_pad = 5
 width_pad = 5
 
 raw_images = list()
 final_images = list()
 message = 'Select a raw image folder'
-
 review = Tk()
-# final_message = 'Select an edited image folder'
 
 open_review()
