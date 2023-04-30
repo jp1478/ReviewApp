@@ -9,13 +9,13 @@ def open_review():
     # review = Tk()
     review.title("Review Page")
     review.state('zoomed')
-    myFont = font.Font(size=10, weight="bold")
+    my_font = font.Font(size=10, weight="bold")
 
     # Buttons
-    raw_select = Button(review, text="Select Folder", command=lambda: select_folder(True), font = myFont, bg="#525266", fg="#ffffff")
+    raw_select = Button(review, text="Select Folder", command=lambda: select_folder(True), font = my_font, bg="#525266", fg="#ffffff")
     raw_select.place(relx=.25, rely=.1, width=120, height=50, anchor=tk.N)
 
-    final_select = Button(review, text="Select Folder", command=lambda: select_folder(False), font = myFont, bg="#525266", fg="#ffffff")
+    final_select = Button(review, text="Select Folder", command=lambda: select_folder(False), font = my_font, bg="#525266", fg="#ffffff")
     final_select.place(relx=.75, rely=.1, width=120, height=50, anchor=tk.N)
 
     # Text
@@ -129,12 +129,11 @@ def select_folder(is_raws_param):
         print("Hidden!")
         return
 
-    image_names = [f for f in os.listdir(folder_path) if f.upper().endswith(".DNG")]
-
-
     if is_raws_param:
+        image_names = [f for f in os.listdir(folder_path) if f.upper().endswith(".DNG")]
         message = fill_raws(image_names, folder_path)
     else:
+        image_names = [f for f in os.listdir(folder_path) if f.upper().endswith(".JPG")]
         message = fill_finals(image_names, folder_path)
 
     display_images()
