@@ -6,24 +6,23 @@ from PIL import Image, ImageTk
 
 def open_review():
     global review
-    # review = Tk()
     review.title("Review Page")
     review.state('zoomed')
     my_font = font.Font(size=10, weight="bold")
 
     # Buttons
-    raw_select = Button(review, text="Select Folder", command=lambda: select_folder(True), font = my_font, bg="#525266", fg="#ffffff")
-    raw_select.place(relx=.25, rely=.1, width=120, height=50, anchor=tk.N)
+    raw_select = Button(review, text="Select Folder", command=select_folder, font = my_font, bg="#525266", fg="#ffffff")
+    raw_select.place(relx=.5, rely=.1, width=120, height=50, anchor=tk.N)
 
-    final_select = Button(review, text="Select Folder", command=lambda: select_folder(False), font = my_font, bg="#525266", fg="#ffffff")
-    final_select.place(relx=.75, rely=.1, width=120, height=50, anchor=tk.N)
+    # final_select = Button(review, text="Select Folder", command=lambda: select_folder(False), font = my_font, bg="#525266", fg="#ffffff")
+    # final_select.place(relx=.75, rely=.1, width=120, height=50, anchor=tk.N)
 
     # Text
     raw_label = Label(review, text="Raw Photos", font = ("Ariel", 22))
-    raw_label.place(relx=.25, rely=.04, anchor=tk.N)
+    raw_label.place(relx=.25, rely=.1, anchor=tk.N)
 
     final_label = Label(review, text="Final Photos", font = ("Ariel", 22))
-    final_label.place(relx=.75, rely=.04, anchor=tk.N)
+    final_label.place(relx=.75, rely=.1, anchor=tk.N)
 
 
 
@@ -51,11 +50,9 @@ def display_images():
     global raw_images
     global final_images
     global message
-    # global final_message
 
     image_canvas.delete("all")
     image_canvas.config(scrollregion=[0, 0, 0, max(len(final_images), len(raw_images)) * (height + height_pad + height_pad) + 16])
-    # displayed = 0
 
     # calculate positions
     center = int(image_canvas.winfo_width()/2)
@@ -86,9 +83,7 @@ def display_images():
 
         line_x = image_x_pos[len(image_x_pos) - 2] + width / 2 + width_pad
         image_canvas.create_line(line_x, 0, line_x, max(len(final_images), len(raw_images)) * (height + height_pad + height_pad) + 16)
-    else:
-        if message != "Images must be grouped":
-            message = "Select a raw image folder"
+
 
     if bool(final_images):
         for i in range(len(final_images)):
@@ -96,13 +91,9 @@ def display_images():
             image_canvas.create_window(image_x_pos[len(image_x_pos)-1],
                                        i * (height + height_pad * 2) + int(height / 2) + height_pad,
                                        window = final_label)
-    else:
-        if message not in ("Select a raw image folder", "Images must be grouped"):
-            message = "Select a final image folder"
 
-    display_message()
 
-    # print(str(displayed) + " group(s) displayed")
+    if message: display_message()
 
     # image Canvas Scrollbar
     ybar = Scrollbar(image_canvas, orient=tk.VERTICAL)
@@ -116,7 +107,7 @@ def display_images():
     image_canvas.config(xscrollcommand=xbar.set)
 
 
-def select_folder(is_raws_param):
+def select_folder():
     global message
     folder_path = filedialog.askdirectory()
 
@@ -129,12 +120,46 @@ def select_folder(is_raws_param):
         print("Hidden!")
         return
 
-    if is_raws_param:
-        image_names = [f for f in os.listdir(folder_path) if f.upper().endswith(".DNG")]
-        message = fill_raws(image_names, folder_path)
+    raws_folder = ''
+    finals_folder = ''
+
+    for subfolder in os.listdir(folder_path):
+        if subfolder in ["Raws", "Raw", "raws", "raw"]:
+            raws_folder = subfolder
+        elif subfolder in ["Finals", "Final", "finals", "final", "Edited", "edited"]:
+            finals_folder = subfolder
+
+    if raws_folder and finals_folder:
+        raw_image_names = [f for f in os.listdir(os.path.join(folder_path, raws_folder)) if f.upper().endswith(".DNG")]
+        final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder)) if f.upper().endswith(".JPG")]
+        if raw_image_names:
+            message = fill_raws(raw_image_names, os.path.join(folder_path, raws_folder))
+        else:
+            try:
+                raws_subfolder = os.listdir(os.path.join(folder_path, raws_folder))[0]
+                raw_image_names = [f for f in os.listdir(os.path.join(folder_path, raws_folder, raws_subfolder)) if f.upper().endswith(".DNG")]
+                if raw_image_names:
+                    message = fill_raws(raw_image_names, os.path.join(folder_path, raws_folder, raws_subfolder))
+                else:
+                    message = "Raws folder must contain dng files. "
+            except NotADirectoryError:
+                message = "Raws folder must contain dng files. "
+
+        if final_image_names:
+            message = fill_finals(final_image_names, os.path.join(folder_path, finals_folder))
+        else:
+            try:
+                finals_subfolder = os.listdir(os.path.join(folder_path, finals_folder))[0]
+                final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder, finals_subfolder)) if f.upper().endswith(".JPG")]
+                if final_image_names:
+                    message = fill_finals(final_image_names, os.path.join(folder_path, finals_folder, finals_subfolder))
+                else:
+                    message = "Finals folder must contain jpg files. "
+            except NotADirectoryError:
+                message = "Finals folder must contain jpg files. "
+
     else:
-        image_names = [f for f in os.listdir(folder_path) if f.upper().endswith(".JPG")]
-        message = fill_finals(image_names, folder_path)
+        message = 'Folder must contain "Raws" and "Finals" subfolders.'
 
     display_images()
 
@@ -179,12 +204,15 @@ def fill_finals(final_names, folder_path):
         image = ImageTk.PhotoImage(image)
         final_images.append(image)
 
-    return "                                    "
+    return ""
 
 def display_message():
-    global message, review
-    message_label = Label(review, text=message, font=("Ariel", 12), padx=20, pady=10, background="#d9d9df")
-    message_label.place(relx=.5, rely=.05, anchor=tk.N)
+    global message
+    alert = Tk()
+    message_label = Label(alert, text=message, font=("Ariel", 12), padx=20, pady=10, background="#d9d9df")
+    message_label.pack()
+    button = Button(alert, text = "Close", command = lambda: alert.destroy())
+    button.pack()
 
 #global variables
 image_size_mult = 1.5
@@ -195,7 +223,7 @@ width_pad = 5
 
 raw_images = list()
 final_images = list()
-message = 'Select a raw image folder'
+message = ""    #'Select an editor\'s folder. Folder should contain "Raws" and "Finals" subfolders. '
 review = Tk()
 
 open_review()
