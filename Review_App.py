@@ -11,8 +11,8 @@ def open_review():
     my_font = font.Font(size=10, weight="bold")
 
     # Buttons
-    raw_select = Button(review, text="Select Folder", command=select_folder, font = my_font, bg="#525266", fg="#ffffff")
-    raw_select.place(relx=.5, rely=.1, width=120, height=50, anchor=tk.N)
+    select = Button(review, text="Select Folder", command=select_folder, font = my_font, bg="#525266", fg="#ffffff")
+    select.place(relx=.5, rely=.1, width=120, height=50, anchor=tk.N)
 
     # final_select = Button(review, text="Select Folder", command=lambda: select_folder(False), font = my_font, bg="#525266", fg="#ffffff")
     # final_select.place(relx=.75, rely=.1, width=120, height=50, anchor=tk.N)
@@ -137,16 +137,27 @@ def select_folder():
     if raws_folder and finals_folder:
         raw_image_names = [f for f in os.listdir(os.path.join(folder_path, raws_folder)) if f.upper().endswith(".DNG")]
         final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder)) if f.upper().endswith((".JPG", ".JPEG"))]
+        note_files = [f for f in os.listdir(os.path.join(folder_path, raws_folder)) if f.upper().endswith(".TXT")]
+        # print(note_files)
+
         if raw_image_names:
             message = fill_raws(raw_image_names, os.path.join(folder_path, raws_folder))
         else:
             try:
-                raws_subfolder = os.listdir(os.path.join(folder_path, raws_folder))[0]
-                raw_image_names = [f for f in os.listdir(os.path.join(folder_path, raws_folder, raws_subfolder)) if f.upper().endswith(".DNG")]
-                if raw_image_names:
-                    message = fill_raws(raw_image_names, os.path.join(folder_path, raws_folder, raws_subfolder))
-                else:
-                    message = "Raws folder must contain dng files. "
+                for raws_subfolder in os.listdir(os.path.join(folder_path, raws_folder)):
+                    try:
+                        raw_image_names = [f for f in os.listdir(os.path.join(folder_path, raws_folder, raws_subfolder)) if f.upper().endswith(".DNG")]
+                    except NotADirectoryError:
+                        continue
+
+                    note_files = [os.path.join(raws_subfolder, f) for f in os.listdir(os.path.join(folder_path, raws_folder, raws_subfolder)) if f.upper().endswith(".TXT")]
+                    # print(note_files)
+                    if raw_image_names:
+                        # print(raw_image_names)
+                        message = fill_raws(raw_image_names, os.path.join(folder_path, raws_folder, raws_subfolder))
+                        break
+                    else:
+                        message = "Raws folder must contain dng files. "
             except NotADirectoryError:
                 message = "Raws folder must contain dng files. "
 
@@ -155,13 +166,17 @@ def select_folder():
         else:
             try:
                 finals_subfolder = os.listdir(os.path.join(folder_path, finals_folder))[0]
-                final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder, finals_subfolder)) if f.upper().endswith(".JPG", ".JPEG")]
+                final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder, finals_subfolder)) if f.upper().endswith((".JPG", ".JPEG"))]
                 if final_image_names:
                     message = fill_finals(final_image_names, os.path.join(folder_path, finals_folder, finals_subfolder))
                 else:
                     message = "Finals folder must contain jpg files. "
             except NotADirectoryError:
                 message = "Finals folder must contain jpg files. "
+
+        if note_files and not message:
+            text = open(os.path.join(folder_path, raws_folder, note_files[0]), "r")
+            message = text.read()
 
     else:
         message = 'Folder must contain "Raws" and "Finals" subfolders.'
@@ -202,7 +217,7 @@ def fill_raws(raw_names, folder_path):
         image = ImageTk.PhotoImage(image)
         raw_images[group_num - 1].append(image)
 
-    return "                                    "
+    return ""
 
 def fill_finals(final_names, folder_path):
     global final_images
