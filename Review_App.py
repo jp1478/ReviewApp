@@ -64,13 +64,18 @@ def display_images():
     image_x_pos = list()
     for i in range(group_len):
         image_x_pos.append(first_image_position + (width + width_pad) * (i+1))
-    image_x_pos.append(first_image_position + (width + width_pad) * (group_len+1) + width_pad)
+    image_x_pos.append(first_image_position + (width + width_pad) * (group_len+1) + width_pad * 3)
 
     if bool(raw_images):
         for i in range(len(raw_images)):
             displayed = i + 1
             group_str = "Group " + str(i + 1)
-            image_canvas.create_text(42, 30 + (height + height_pad * 2) * i, text=group_str)
+            image_canvas.create_text(52, 30 + (height + height_pad * 2) * i, text=group_str)
+
+            label = Label(image_canvas, text="Ignore Raws")
+            label.bind("<Button-1>", lambda event, index=i: remove_raws(index))
+            image_canvas.create_window(52, 80 + (height + height_pad * 2) * i, window=label)
+
             image_canvas.create_line(0, (height + height_pad * 2) + (i * (height + height_pad * 2)), image_canvas.winfo_width(),
                                        (height + height_pad * 2) + (i * (height + height_pad * 2)))
             group_images = raw_images[i]
@@ -81,7 +86,7 @@ def display_images():
                 y_pos = i * (height + height_pad * 2) + int(height / 2) + height_pad
                 image_canvas.create_window(x_pos, y_pos, window=label)
 
-        line_x = image_x_pos[len(image_x_pos) - 2] + width / 2 + width_pad
+        line_x = image_x_pos[len(image_x_pos) - 2] + width / 2 + width_pad * 2
         image_canvas.create_line(line_x, 0, line_x, max(len(final_images), len(raw_images)) * (height + height_pad + height_pad) + 16)
 
 
@@ -171,6 +176,11 @@ def is_raws(image_names):
         except ValueError:
             return False
     return True
+
+def remove_raws(index):
+    global raw_images
+    del raw_images[index]
+    display_images()
 
 def fill_raws(raw_names, folder_path):
     global raw_images
