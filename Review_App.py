@@ -131,7 +131,7 @@ def select_folder():
 
     if raws_folder and finals_folder:
         raw_image_names = [f for f in os.listdir(os.path.join(folder_path, raws_folder)) if f.upper().endswith(".DNG")]
-        final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder)) if f.upper().endswith(".JPG", ".JPEG")]
+        final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder)) if f.upper().endswith((".JPG", ".JPEG"))]
         if raw_image_names:
             message = fill_raws(raw_image_names, os.path.join(folder_path, raws_folder))
         else:
