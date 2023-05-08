@@ -193,8 +193,10 @@ def is_raws(image_names):
     return True
 
 def remove_raws(index):
+    global message
     global raw_images
     del raw_images[index]
+    message = ""
     display_images()
 
 def fill_raws(raw_names, folder_path):
