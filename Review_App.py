@@ -72,9 +72,9 @@ def display_images():
             group_str = "Group " + str(i + 1)
             image_canvas.create_text(52, 30 + (height + height_pad * 2) * i, text=group_str)
 
-            label = Label(image_canvas, text="Ignore Raws")
-            label.bind("<Button-1>", lambda event, index=i: remove_raws(index))
-            image_canvas.create_window(52, 80 + (height + height_pad * 2) * i, window=label)
+            # label = Label(image_canvas, text="Ignore Raws")
+            # label.bind("<Button-1>", lambda event, index=i: remove_raws(index))
+            # image_canvas.create_window(52, 80 + (height + height_pad * 2) * i, window=label)
 
             image_canvas.create_line(0, (height + height_pad * 2) + (i * (height + height_pad * 2)), image_canvas.winfo_width(),
                                        (height + height_pad * 2) + (i * (height + height_pad * 2)))
@@ -135,6 +135,7 @@ def select_folder():
             finals_folder = subfolder
 
     if raws_folder and finals_folder:
+        # raws_path = os.path.join(folder_path, raws_folder)
         raw_image_names = [f for f in os.listdir(os.path.join(folder_path, raws_folder)) if f.upper().endswith(".DNG")]
         final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder)) if f.upper().endswith((".JPG", ".JPEG"))]
         note_files = [f for f in os.listdir(os.path.join(folder_path, raws_folder)) if f.upper().endswith(".TXT")]
@@ -149,7 +150,7 @@ def select_folder():
                         raw_image_names = [f for f in os.listdir(os.path.join(folder_path, raws_folder, raws_subfolder)) if f.upper().endswith(".DNG")]
                     except NotADirectoryError:
                         continue
-
+                    # raws_path = os.path.join(folder_path, raws_folder, raws_subfolder)
                     note_files = [os.path.join(raws_subfolder, f) for f in os.listdir(os.path.join(folder_path, raws_folder, raws_subfolder)) if f.upper().endswith(".TXT")]
                     # print(note_files)
                     if raw_image_names:
@@ -162,13 +163,18 @@ def select_folder():
                 message = "Raws folder must contain dng files. "
 
         if final_image_names:
-            message = fill_finals(final_image_names, os.path.join(folder_path, finals_folder))
+            if raw_image_names:
+                sorted_final_image_names = sort_finals(raw_image_names, final_image_names)
+                print("Raws updated")
+            message = fill_finals(sorted_final_image_names, os.path.join(folder_path, finals_folder))
         else:
             try:
                 finals_subfolder = os.listdir(os.path.join(folder_path, finals_folder))[0]
                 final_image_names = [f for f in os.listdir(os.path.join(folder_path, finals_folder, finals_subfolder)) if f.upper().endswith((".JPG", ".JPEG"))]
                 if final_image_names:
-                    message = fill_finals(final_image_names, os.path.join(folder_path, finals_folder, finals_subfolder))
+                    if raw_image_names:
+                        sorted_final_image_names = sort_finals(raw_image_names, final_image_names)
+                    message = fill_finals(sorted_final_image_names, os.path.join(folder_path, finals_folder, finals_subfolder))
                 else:
                     message = "Finals folder must contain jpg files. "
             except NotADirectoryError:
@@ -196,8 +202,8 @@ def remove_raws(index):
     global message
     global raw_images
     del raw_images[index]
-    message = ""
-    display_images()
+    message = "Some groups are missing finals"
+    # display_images()
 
 def fill_raws(raw_names, folder_path):
     global raw_images
@@ -232,6 +238,42 @@ def fill_finals(final_names, folder_path):
         final_images.append(image)
 
     return ""
+
+
+def sort_finals(raws_param, finals_param):
+    raws_2d = list()
+    sorted_finals = list()
+
+    for raw in raws_param:
+        group_num = int(raw[:raw.find('-')])
+        if len(raws_2d) < group_num:
+            for i in range(len(raws_2d), group_num):
+                raws_2d.append(list())
+
+        raws_2d[group_num - 1].append(raw)
+
+    removed = 0
+    for raw_group in raws_2d:
+        added = False
+        for raw in raw_group:
+            name = raw[raw.find('-') + 1:-4]
+            for final in finals_param:
+                if name in final:
+                    sorted_finals.append(final)
+                    added = True
+                    break
+            if added: break
+        if not added:
+            print("raw group is missing finals")
+            remove_raws(int(raw_group[0][:raw_group[0].find('-')]) - removed - 1)
+            removed += 1
+            # for raw in raw_group:
+            #     raws_param.remove(raw)
+
+    return sorted_finals
+
+
+
 
 def display_message():
     global message
