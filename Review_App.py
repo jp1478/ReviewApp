@@ -4,7 +4,10 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import Tk, Button, Label, Scrollbar, Canvas, font, filedialog
 from PIL import Image, ImageTk
+import psycopg2
 import pandas as pd
+from urllib.parse import quote_plus
+from sqlalchemy import create_engine
 import atexit
 
 def open_review():
@@ -293,20 +296,30 @@ def sort_finals(raws_param, finals_param):
 
     return sorted_finals
 
+import pandas as pd
+
 def log(name, start_time_param, end_time_param, file_folder):
-    columns = ['Name', 'Time Opened', 'Time Finished Review', "File Folder"]
-
-    # Create DataFrame from multiple lists
-    df = pd.DataFrame(list(zip([name], [start_time_param], [end_time_param], [file_folder])), columns=columns)
-
-    # Append DataFrame to existing Excel file
     try:
-        with pd.ExcelWriter('Review_Log.xlsx', mode='a', engine='openpyxl', if_sheet_exists='overlay') as writer:
-            df.to_excel(writer, startrow = writer.sheets['Review Log'].max_row, sheet_name='Review Log', header = False)
-    except FileNotFoundError:
-        df.to_excel('Review_Log.xlsx', sheet_name='Review Log')
-    except PermissionError:
-        print("Log cannot be accessed because it is being viewed. ")
+        # Establish a connection to the PostgreSQL database
+        password = quote_plus('digit!@#$')
+        engine = create_engine(f'postgresql://postgres:{password}@localhost/jira')
+        conn = engine.connect()
+
+        # Create a DataFrame from the log data
+        columns = ['name', 'time_opened', 'time_finished_review', 'file_folder']
+        data = [[name, start_time_param, end_time_param, file_folder]]
+        df = pd.DataFrame(data, columns=columns)
+
+        # Write the DataFrame to the PostgreSQL database
+        df.to_sql('logs', conn, if_exists='append', index=False, method='multi', chunksize=1000)
+        
+        # Close the database connection
+        conn.close()
+        
+        print("Data logged successfully.")
+        
+    except Exception as e:
+        print(f"An error occurred while logging the data: {e}")
 
 
 def display_message():
