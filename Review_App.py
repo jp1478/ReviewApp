@@ -301,7 +301,7 @@ import pandas as pd
 def log(name, start_time_param, end_time_param, file_folder):
     try:
         # Establish a connection to the PostgreSQL database
-        password = quote_plus('digit!@#$')
+        password = quote_plus('')
         engine = create_engine(f'postgresql://postgres:{password}@localhost/jira')
         conn = engine.connect()
 
