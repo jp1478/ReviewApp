@@ -1,0 +1,1 @@
+This file is inside the ***raws*** folder and contains notes for the editors/team leads.
