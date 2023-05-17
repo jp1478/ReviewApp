@@ -1,8 +1,11 @@
 #@author Joshua Phillips - jp1478
 import os
 import tkinter as tk
+from datetime import datetime
 from tkinter import Tk, Button, Label, Scrollbar, Canvas, font, filedialog
 from PIL import Image, ImageTk
+import pandas as pd
+import atexit
 
 def open_review():
     global review
@@ -114,7 +117,23 @@ def display_images():
 
 def select_folder():
     global message
+    global raw_images
+    global final_images
+    global start_time
+    global folder_path
+
+    if raw_images and final_images and folder_path and start_time:
+        log(os.getlogin(), start_time, datetime.now(),folder_path)
+    else:
+        print("An error occurred")
+
+    raw_images = list()
+    final_images = list()
+    message = ""
+
     folder_path = filedialog.askdirectory()
+
+
 
     #check if folder was selected
     if not bool(folder_path):
@@ -183,9 +202,11 @@ def select_folder():
         if note_files and not message:
             text = open(os.path.join(folder_path, raws_folder, note_files[0]), "r")
             message = text.read()
-
     else:
         message = 'Folder must contain "Raws" and "Finals" subfolders.'
+
+    if raw_images and final_images:
+        start_time = datetime.now()
 
     display_images()
 
@@ -272,7 +293,20 @@ def sort_finals(raws_param, finals_param):
 
     return sorted_finals
 
+def log(name, start_time_param, end_time_param, file_folder):
+    columns = ['Name', 'Time Opened', 'Time Finished Review', "File Folder"]
 
+    # Create DataFrame from multiple lists
+    df = pd.DataFrame(list(zip([name], [start_time_param], [end_time_param], [file_folder])), columns=columns)
+
+    # Append DataFrame to existing Excel file
+    try:
+        with pd.ExcelWriter('Review_Log.xlsx', mode='a', engine='openpyxl', if_sheet_exists='overlay') as writer:
+            df.to_excel(writer, startrow = writer.sheets['Review Log'].max_row, sheet_name='Review Log', header = False)
+    except FileNotFoundError:
+        df.to_excel('Review_Log.xlsx', sheet_name='Review Log')
+    except PermissionError:
+        print("Log cannot be accessed because it is being viewed. ")
 
 
 def display_message():
@@ -283,16 +317,26 @@ def display_message():
     button = Button(alert, text = "Close", command = lambda: alert.destroy())
     button.pack()
 
+def on_exit():
+    if raw_images and final_images and folder_path and start_time:
+        log(os.getlogin(), start_time, datetime.now(), folder_path)
+    else:
+        print("An error occurred")
+
 #global variables
 image_size_mult = 1.5
 height = int(170 * image_size_mult)
 width = int(264 * image_size_mult)
 height_pad = 5
 width_pad = 5
+global start_time
+folder_path = ''
 
 raw_images = list()
 final_images = list()
 message = ""    #'Select an editor\'s folder. Folder should contain "Raws" and "Finals" subfolders. '
 review = Tk()
+
+atexit.register(on_exit)
 
 open_review()
