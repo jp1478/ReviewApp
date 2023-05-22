@@ -2,26 +2,44 @@
 import os
 import tkinter as tk
 from datetime import datetime
-from tkinter import Tk, Button, Label, Scrollbar, Canvas, font, filedialog
+from tkinter import Tk, Button, Label, Scrollbar, Canvas, font, filedialog, ttk
+from tkinter.ttk import Notebook, Frame, Style
 from PIL import Image, ImageTk
-import psycopg2
+# import psycopg2
 import pandas as pd
 from urllib.parse import quote_plus
 from sqlalchemy import create_engine
 import atexit
 
 def open_review():
-    global review
-    review.title("Review Page")
-    review.state('zoomed')
+    global root
+    root.title("Critical Review")
+    root.state('zoomed')
+    root.configure(background = "#a9a9af")
     my_font = font.Font(size=10, weight="bold")
+
+    ############## Tabs ##################
+    # style = Style()
+    # style.theme_create("MyStyle", settings={
+    #     "TNotebook": {"configure": {"tabmargins": [2, 5, 2, 0]}},
+    #     "TNotebook.Tab": {"configure": {"padding": [10, 3]}, }})
+    #
+    # style.theme_use("MyStyle")
+
+    tabControl = Notebook(root)
+
+    review = Frame(tabControl)
+    global notes
+    notes = Frame(tabControl)
+
+    tabControl.add(review, text='Review Tab')
+    tabControl.add(notes, text='Notes')
+    tabControl.place(relx=0.02, rely=0.02, relwidth=0.96, relheight=0.96)
+    ######################################
 
     # Buttons
     select = Button(review, text="Select Folder", command=select_folder, font = my_font, bg="#525266", fg="#ffffff")
     select.place(relx=.5, rely=.1, width=120, height=50, anchor=tk.N)
-
-    # final_select = Button(review, text="Select Folder", command=lambda: select_folder(False), font = my_font, bg="#525266", fg="#ffffff")
-    # final_select.place(relx=.75, rely=.1, width=120, height=50, anchor=tk.N)
 
     # Text
     raw_label = Label(review, text="Raw Photos", font = ("Ariel", 22))
@@ -29,8 +47,6 @@ def open_review():
 
     final_label = Label(review, text="Final Photos", font = ("Ariel", 22))
     final_label.place(relx=.75, rely=.1, anchor=tk.N)
-
-
 
     ### Raw Canvas
     global image_canvas
@@ -202,9 +218,17 @@ def select_folder():
             except NotADirectoryError:
                 message = "Finals folder must contain jpg files. "
 
-        if note_files and not message:
-            text = open(os.path.join(folder_path, raws_folder, note_files[0]), "r")
-            message = text.read()
+        #Display notes in tab
+        if note_files: # and not message:
+            for note in note_files:
+                note_text = open(os.path.join(folder_path, raws_folder, note), "r")
+                note_string = note_text.read()
+                note_label = Label(notes, text=note_string, font=("Ariel", 10), pady=15, background="#d9d9df")
+                note_label.pack()
+        else:
+            note_label = Label(notes, text="No Notes", font=("Ariel", 10))
+            note_label.pack()
+
     else:
         message = 'Folder must contain "Raws" and "Finals" subfolders.'
 
@@ -296,13 +320,13 @@ def sort_finals(raws_param, finals_param):
 
     return sorted_finals
 
-import pandas as pd
+# import pandas as pd
 
 def log(name, start_time_param, end_time_param, file_folder):
     try:
         # Establish a connection to the PostgreSQL database
-        password = quote_plus('')
-        engine = create_engine(f'postgresql://postgres:{password}@localhost/jira')
+        password = quote_plus('postgresAloh0mor@')
+        engine = create_engine(f'postgresql://postgres:{password}@127.0.0.1/inuahub')
         conn = engine.connect()
 
         # Create a DataFrame from the log data
@@ -345,10 +369,11 @@ width_pad = 5
 global start_time
 folder_path = ''
 
+
 raw_images = list()
 final_images = list()
 message = ""    #'Select an editor\'s folder. Folder should contain "Raws" and "Finals" subfolders. '
-review = Tk()
+root = Tk()
 
 atexit.register(on_exit)
 
