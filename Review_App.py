@@ -328,8 +328,9 @@ def sort_finals(raws_param, finals_param):
 def log(name, start_time_param, end_time_param, file_folder):
     try:
         # Establish a connection to the PostgreSQL database
+
         password = quote_plus('postgresAloh0mor@')
-        engine = create_engine(f'postgresql://postgres:{password}@localhost/inuahub')
+        engine = create_engine(f'postgresql://postgres:{password}@127.0.0.1/inuahub')
         conn = engine.connect()
 
         # Create a DataFrame from the log data
