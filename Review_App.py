@@ -16,15 +16,18 @@ def open_review():
     root.title("Critical Review")
     root.state('zoomed')
     root.configure(background = "#a9a9af")
-    my_font = font.Font(size=10, weight="bold")
+    my_font = font.Font(size=10, weight="bold", family = "Gadugi")
 
     ############## Tabs ##################
-    # style = Style()
-    # style.theme_create("MyStyle", settings={
-    #     "TNotebook": {"configure": {"tabmargins": [2, 5, 2, 0]}},
-    #     "TNotebook.Tab": {"configure": {"padding": [10, 3]}, }})
-    #
-    # style.theme_use("MyStyle")
+    style = Style()
+    style.theme_create("MyStyle", settings={
+        "TNotebook": {"configure": {"tabmargins": [5, 5, 2, 0]}},
+        "TNotebook.Tab": {
+            "configure": {"padding": [50, 10], "foreground":"#ffffff", "background":"#727286", "font":("Gadugi", 11)},
+            "map":       {"background": [("selected", "#dadada")], "foreground": [("selected", "#000000")] }}})
+                          # "expand": [("selected", [1, 1, 1, 0])]
+
+    style.theme_use("MyStyle")
 
     tabControl = Notebook(root)
 
@@ -32,26 +35,26 @@ def open_review():
     global notes
     notes = Frame(tabControl)
 
-    tabControl.add(review, text='Review Tab')
+    tabControl.add(review, text='Image Review')
     tabControl.add(notes, text='Notes')
-    tabControl.place(relx=0.02, rely=0.02, relwidth=0.96, relheight=0.96)
+    tabControl.place(relx=0.01, rely=0.02, relwidth=0.98, relheight=0.96)
     ######################################
 
     # Buttons
-    select = Button(review, text="Select Folder", command=select_folder, font = my_font, bg="#525266", fg="#ffffff")
-    select.place(relx=.5, rely=.1, width=120, height=50, anchor=tk.N)
+    select = Button(review, text="Select Folder", command=select_folder, font = my_font, bg="#727286", fg="#ffffff")
+    select.place(relx=.5, rely=.05, width=120, height=50, anchor=tk.N)
 
     # Text
-    raw_label = Label(review, text="Raw Photos", font = ("Ariel", 22))
-    raw_label.place(relx=.25, rely=.1, anchor=tk.N)
+    raw_label = Label(review, text="Raw Photos", font = ("Gadugi", 22), bg="#dadada")
+    raw_label.place(relx=.25, rely=.05, anchor=tk.N)
 
-    final_label = Label(review, text="Final Photos", font = ("Ariel", 22))
-    final_label.place(relx=.75, rely=.1, anchor=tk.N)
+    final_label = Label(review, text="Final Photos", font = ("Gadugi", 22), bg="#dadada")
+    final_label.place(relx=.75, rely=.05, anchor=tk.N)
 
     ### Raw Canvas
     global image_canvas
     image_canvas = Canvas(review, bd="3", bg="#d9d9df")
-    image_canvas.place(relx=.02, rely=.2, relheight = 520/700, relwidth=1140/1200, anchor=tk.NW)
+    image_canvas.place(relx=.02, rely=.15, relheight = 550/700, relwidth=1140/1200, anchor=tk.NW)
 
     # image Canvas Scrolling Function
     image_canvas.yview_moveto(0)
@@ -109,7 +112,7 @@ def display_images():
                 image_canvas.create_window(x_pos, y_pos, window=label)
 
         line_x = image_x_pos[len(image_x_pos) - 2] + width / 2 + width_pad * 2
-        image_canvas.create_line(line_x, 0, line_x, max(len(final_images), len(raw_images)) * (height + height_pad + height_pad) + 16)
+        image_canvas.create_line(line_x, 0, line_x, max(len(final_images), len(raw_images)) * (height + height_pad + height_pad) + 16, width=3)
 
 
     if bool(final_images):
@@ -223,10 +226,10 @@ def select_folder():
             for note in note_files:
                 note_text = open(os.path.join(folder_path, raws_folder, note), "r")
                 note_string = note_text.read()
-                note_label = Label(notes, text=note_string, font=("Ariel", 10), pady=15, background="#d9d9df")
+                note_label = Label(notes, text=note_string, font=("Gadugi", 10), pady=15, background="#a9a9af")
                 note_label.pack()
         else:
-            note_label = Label(notes, text="No Notes", font=("Ariel", 10))
+            note_label = Label(notes, text="No Notes", font=("Gadugi", 10))
             note_label.pack()
 
     else:
@@ -349,7 +352,7 @@ def log(name, start_time_param, end_time_param, file_folder):
 def display_message():
     global message
     alert = Tk()
-    message_label = Label(alert, text=message, font=("Ariel", 12), padx=20, pady=10, background="#d9d9df")
+    message_label = Label(alert, text=message, font=("Gadugi", 12), padx=20, pady=10, background="#d9d9df")
     message_label.pack()
     button = Button(alert, text = "Close", command = lambda: alert.destroy())
     button.pack()
