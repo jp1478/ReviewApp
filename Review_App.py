@@ -2,7 +2,7 @@
 import os
 import tkinter as tk
 from datetime import datetime
-from tkinter import Tk, Button, Label, Scrollbar, Canvas, font, filedialog, ttk
+from tkinter import Tk, Button, Label, Scrollbar, Canvas, font, filedialog, Entry
 from tkinter.ttk import Notebook, Frame, Style
 from PIL import Image, ImageTk
 # import psycopg2
@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 import atexit
 
 def open_review():
-    global root
+    root = Tk()
     root.title("Critical Review")
     root.state('zoomed')
     root.configure(background = "#a9a9af")
@@ -93,7 +93,7 @@ def display_images():
 
     if bool(raw_images):
         for i in range(len(raw_images)):
-            displayed = i + 1
+            # displayed = i + 1
             group_str = "Group " + str(i + 1)
             image_canvas.create_text(52, 30 + (height + height_pad * 2) * i, text=group_str)
 
@@ -117,7 +117,11 @@ def display_images():
 
     if bool(final_images):
         for i in range(len(final_images)):
-            final_label = Label(image_canvas, image = final_images[i])
+            if final_images[i] == "missing":
+                final_label = Label(image_canvas, text = "Missing", font = ("Gadugi", 12))
+            else:
+                final_label = Label(image_canvas, image = final_images[i])
+
             image_canvas.create_window(image_x_pos[len(image_x_pos)-1],
                                        i * (height + height_pad * 2) + int(height / 2) + height_pad,
                                        window = final_label)
@@ -225,7 +229,7 @@ def select_folder():
         if note_files: # and not message:
             for note in note_files:
                 note_text = open(os.path.join(folder_path, raws_folder, note), "r")
-                note_string = note_text.read()
+                note_string = " - ".join((note, note_text.read()))
                 note_label = Label(notes, text=note_string, font=("Gadugi", 10), pady=15, background="#a9a9af")
                 note_label.pack()
         else:
@@ -283,10 +287,13 @@ def fill_finals(final_names, folder_path):
     final_images = list()
 
     for file_name in final_names:
-        image = Image.open(os.path.join(folder_path, file_name))
-        image = image.resize((width, height), Image.LANCZOS)
-        image = ImageTk.PhotoImage(image)
-        final_images.append(image)
+        if file_name == "missing":
+            final_images.append("missing")
+        else:
+            image = Image.open(os.path.join(folder_path, file_name))
+            image = image.resize((width, height), Image.LANCZOS)
+            image = ImageTk.PhotoImage(image)
+            final_images.append(image)
 
     return ""
 
@@ -303,7 +310,7 @@ def sort_finals(raws_param, finals_param):
 
         raws_2d[group_num - 1].append(raw)
 
-    removed = 0
+    # removed = 0
     for raw_group in raws_2d:
         added = False
         for raw in raw_group:
@@ -316,23 +323,15 @@ def sort_finals(raws_param, finals_param):
             if added: break
         if not added:
             print("raw group is missing finals")
-            remove_raws(int(raw_group[0][:raw_group[0].find('-')]) - removed - 1)
-            removed += 1
-            # for raw in raw_group:
-            #     raws_param.remove(raw)
+            sorted_finals.append("missing")
+            # remove_raws(int(raw_group[0][:raw_group[0].find('-')]) - removed - 1)
+            # removed += 1
+
 
     return sorted_finals
 
-# import pandas as pd
-
 def log(name, start_time_param, end_time_param, file_folder):
     try:
-        # Establish a connection to the PostgreSQL database
-
-        password = quote_plus('postgresAloh0mor@')
-        engine = create_engine(f'postgresql://postgres:{password}@127.0.0.1/inuahub')
-        conn = engine.connect()
-
         # Create a DataFrame from the log data
         columns = ['name', 'time_opened', 'time_finished_review', 'file_folder']
         data = [[name, start_time_param, end_time_param, file_folder]]
@@ -349,6 +348,17 @@ def log(name, start_time_param, end_time_param, file_folder):
     except Exception as e:
         print(f"An error occurred while logging the data: {e}")
 
+def database_connect():
+    try:
+        # Establish a connection to the PostgreSQL database
+        global password
+        global conn
+        password = quote_plus(password)
+        engine = create_engine(f'postgresql://postgres:{password}@127.0.0.1/inuahub') #change to server ip
+        conn = engine.connect()
+    except Exception as e:
+        print(f"An error occurred while connecting to the database: {e}")
+
 
 def display_message():
     global message
@@ -357,6 +367,29 @@ def display_message():
     message_label.pack()
     button = Button(alert, text = "Close", command = lambda: alert.destroy())
     button.pack()
+
+def database_login():
+    login = Tk()
+    login.geometry("300x150")
+    pass_label = Label(login, text="Enter your postgres password", font=("Gadugi", 13), padx=20, pady=10)
+    pass_label.pack()
+    pass_entry = Entry(login, show = "*")
+    pass_entry.pack()
+    fail_label = Label(login, text="Password is incorrect", font=("Gadugi", 11), pady=10)
+    def login_submit():
+        global password
+        password = pass_entry.get()
+        database_connect()
+        if conn:
+            login.destroy()
+            open_review()
+        else:
+            fail_label.pack()
+
+    button = Button(login, text = "Login", command = lambda: login_submit())
+    button.pack()
+
+    login.mainloop()
 
 def on_exit():
     if raw_images and final_images and folder_path and start_time:
@@ -372,13 +405,12 @@ height_pad = 5
 width_pad = 5
 global start_time
 folder_path = ''
-
-
+password = ''
 raw_images = list()
 final_images = list()
-message = ""    #'Select an editor\'s folder. Folder should contain "Raws" and "Finals" subfolders. '
-root = Tk()
+message = ""
+conn = ""
 
 atexit.register(on_exit)
 
-open_review()
+database_login()
